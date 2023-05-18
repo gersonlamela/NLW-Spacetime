@@ -1,5 +1,13 @@
 import { StatusBar } from "expo-status-bar";
+import React, { useEffect } from "react";
+
 import { ImageBackground, Text, TouchableOpacity, View } from "react-native";
+import * as SecureStore from 'expo-secure-store'; 
+import { styled } from "nativewind";
+import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
+import { api } from "../src/lib/api";
+
+import { useRouter } from "expo-router";
 
 import {
   useFonts,
@@ -8,22 +16,65 @@ import {
 } from "@expo-google-fonts/roboto";
 
 import { BaiJamjuree_700Bold } from "@expo-google-fonts/bai-jamjuree";
-import React from "react";
 
-import blurBg from "./src/assets/bg-blur.png";
-import NLWLogo from "./src/assets/nlw-logo.svg";
 
-import Stripes from "./src/assets/stripes.svg";
-import { styled } from "nativewind";
+import blurBg from "../src/assets/bg-blur.png";
+import NLWLogo from "../src/assets/nlw-logo.svg";
+import Stripes from "../src/assets/stripes.svg";
+
+
+
 
 const StyledStripes = styled(Stripes);
 
+const discovery = {
+  authorizationEndpoint: 'https://github.com/login/oauth/authorize',
+  tokenEndpoint: 'https://github.com/login/oauth/access_token',
+  revocationEndpoint: 'https://github.com/settings/connections/applications/c49d8bc3cca8bbbcf7bc',
+};
+
 export default function App() {
+  const router = useRouter()
+
+
   const [hasLoadedFonts] = useFonts({
     Roboto_400Regular,
     Roboto_700Bold,
     BaiJamjuree_700Bold,
   });
+
+  const [request, response, signInWithGithub] = useAuthRequest(
+    {
+      clientId: 'c49d8bc3cca8bbbcf7bc',
+      scopes: ['identity'],
+      redirectUri: makeRedirectUri({
+        scheme: 'nlwspacetime',
+      }),
+    },
+    discovery
+  );
+
+  async function handleGithubOAuthCode(code:string){
+   const response = await api.post('register',{
+      code,
+    })
+    const {token} = response.data
+
+    await SecureStore.setItemAsync('token', token);
+
+    router.push('/memories')
+  }
+
+  useEffect(() => {
+
+    if (response?.type === 'success') {
+      const { code } = response.params;
+
+      handleGithubOAuthCode(code)
+    }
+  }, [response]);
+
+
 
   if (!hasLoadedFonts) {
     return null;
@@ -47,7 +98,7 @@ export default function App() {
             quiser) com o mundo!
           </Text>
         </View>
-        <TouchableOpacity activeOpacity={0.7} className="rounded-full bg-green-500 px-5 py-2">
+        <TouchableOpacity onPress={() => signInWithGithub()} activeOpacity={0.7} className="rounded-full bg-green-500 px-5 py-2">
           <Text
             className="font-alt text-sm uppercase text-black
         "
