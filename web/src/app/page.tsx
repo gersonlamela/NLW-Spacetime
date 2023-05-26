@@ -52,10 +52,10 @@ export default async function Home() {
               className="aspect-video w-full rounded-lg object-cover"
               alt=""
             />
-            <p className="text-lg leading-relaxed text-gray-100">
-              {memory.excerpt}
-            </p>
-
+            <div
+              className="text-lg leading-relaxed text-gray-100"
+              dangerouslySetInnerHTML={{ __html: memory.excerpt }}
+            ></div>
             <Link
               href={`/memories/${memory.id}`}
               className="flex items-center gap-2 text-sm text-gray-200 hover:text-gray-100"
